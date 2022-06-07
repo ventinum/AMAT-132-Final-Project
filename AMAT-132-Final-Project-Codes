@@ -25,17 +25,17 @@ data_stl <- stlplus(data_ts, s.window = "period")
 plot(data_stl)
 
 #Utilize Augmented Dickey-Fuller (ADF) test to support NONSTATIONARY behavior of time series
-#Exhibits NON STATIONARITY for p-value > 0.01 (significance level)
+#Exhibits NON STATIONARITY for p-value > 0.05 (significance level)
 adf.test(data_ts, k=12)
 
-#Time series has p-value of 0.09527 > 0.01, thus NON STATIONARY
+#Time series has p-value of 0.09527 > 0.05, thus NON STATIONARY
 #Perform first level differencing to approach STATIONARITY
 data_ts_d1 <- diff(data_ts, differences = 1)
 
 #Perform ADF Test on first level difference
 adf.test(data_ts_d1, k=12)
 
-#First level difference has p-value of 0.01 <= 0.01, Thus STATIONARITY achieved
+#First level difference has p-value of 0.01 < 0.05, Thus STATIONARITY achieved
 #Plot first level difference to verify stationary behavior
 plot(data_ts_d1)
 
@@ -57,10 +57,6 @@ print(Model)
 (fit_autoarima <- auto.arima(data_ts, seasonal=FALSE))
 
 #Auto ARIMA function consideres ARIMA (3,1,2) which provides AICc = 91.65
-#Consider MA(q) model
-(fit_ma <- Arima(data_ts, order=c(2,1,3)))
-
-#ARIMA(2,1,3) provides AICc = 93.58
 #Consider autoarima with parameter approximation=FALSE and stepwise=FALSE
 (fit_autoarima_noapprox <- auto.arima(data_ts, seasonal=FALSE,stepwise=FALSE, approximation=FALSE))
 
@@ -70,7 +66,6 @@ print(Model)
 #Compare residuals of all models
 checkresiduals(Model)
 checkresiduals(fit_autoarima)
-checkresiduals(fit_ma)
 checkresiduals(fit_autoarima_noapprox)
 
 #Perform Model Training
