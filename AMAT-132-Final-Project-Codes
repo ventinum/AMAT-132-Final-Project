@@ -73,9 +73,30 @@ checkresiduals(fit_autoarima)
 checkresiduals(fit_ma)
 checkresiduals(fit_autoarima_noapprox)
 
+#Perform Model Training
+#Set test data = last five years
+training <- subset(data_ts, end=length(data_ts)-61)
+test <- subset(data_ts, start=length(data_ts)-60)
 
+#Illustrate ARIMA(0,1,4) on training data
+ModelTrain <- Arima(training, order=c(0,1,4), lambda=0)
+ModelTrain %>%
+  forecast(h=60) %>%
+  autoplot() + autolayer(test)
 
+#Plot 12-step fitted values to training data
+autoplot(training, series="Training data") +
+  autolayer(fitted(ModelTrain, h=12),
+            series="12-step fitted values")
 
+#Apply same ARIMA model to test data
+ModelTest <- Arima(test, model=ModelTrain)
 
+#Check results for accuracy
+accuracy(ModelTest)
                    
+#Forecast next 5 years of time series with ARIMA (0,1,4)
+forecast(fit_autoarima_noapprox, h=60)
 
+#Plot forecast
+autoplot(forecast(fit_autoarima_noapprox, h=60))
