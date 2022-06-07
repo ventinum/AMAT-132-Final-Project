@@ -1,0 +1,81 @@
+#libraries to be included 
+library(readxl) #excel file import
+library('fpp2') #plotting of time series
+library(stlplus) #time series decomp
+library(tidyverse) #excel to time series converter
+library(tseries) #time series functions
+
+#Import data set, file location open for edit :)
+data <- read_excel("C:/Users/user/Downloads/2nd Year 2nd Sem Files/AMAT 132/Monthly Recorded Temperature Changes in the Philippines.xlsx")
+
+#Convert dataset into time series
+data_ts <- data %>%
+  mutate(Month = 1:n()) %>% 
+  gather(Year, value, -Month) %>% 
+  arrange(Year, Month) %>%
+  {ts(.$value, start = c(2000, 1), frequency = 12)}
+
+#Plot time series 
+autoplot(data_ts)
+
+#Decompose time series data to see if our data exhibits trend and seasonality
+data_stl <- stlplus(data_ts, s.window = "period")
+
+#Examine plot
+plot(data_stl)
+
+#Utilize Augmented Dickey-Fuller (ADF) test to support NONSTATIONARY behavior of time series
+#Exhibits NON STATIONARITY for p-value > 0.01 (significance level)
+adf.test(data_ts, k=12)
+
+#Time series has p-value of 0.09527 > 0.01, thus NON STATIONARY
+#Perform first level differencing to approach STATIONARITY
+data_ts_d1 <- diff(data_ts, differences = 1)
+
+#Perform ADF Test on first level difference
+adf.test(data_ts_d1, k=12)
+
+#First level difference has p-value of 0.01 <= 0.01, Thus STATIONARITY achieved
+#Plot first level difference to verify stationary behavior
+plot(data_ts_d1)
+
+#Following first level difference utilized, d-value in ARIMA = 1
+#Choose p-value for ARIMA using PACF plot
+Pacf(data_ts_d1)
+
+#We find from PACF plot that p=2 has high significance.
+#Choose q-value for ARIMA using ACF plot
+Acf(data_ts_d1)
+
+#We find from ACF plot that q=1 has high significance. 
+#Thus, we consider ARIMA (2,1,1) in forecasting data.
+Model <- Arima(y=data_ts, order = c(2,1,1))
+print(Model)
+
+#ARIMA (2,1,1) provides AICc = 96.24
+#Consider other models; Perform auto ARIMA
+(fit_autoarima <- auto.arima(data_ts, seasonal=FALSE))
+
+#Auto ARIMA function consideres ARIMA (3,1,2) which provides AICc = 91.65
+#Consider MA(q) model
+(fit_ma <- Arima(data_ts, order=c(2,1,3)))
+
+#ARIMA(2,1,3) provides AICc = 93.58
+#Consider autoarima with parameter approximation=FALSE and stepwise=FALSE
+(fit_autoarima_noapprox <- auto.arima(data_ts, seasonal=FALSE,stepwise=FALSE, approximation=FALSE))
+
+#Latest Auto ARIMA function consideres ARIMA (0,1,4) which provides AICc = 91.11
+#Based on all ARIMA models considered we find ARIMA(0,1,4) to provide the lowest AICc 
+
+#Compare residuals of all models
+checkresiduals(Model)
+checkresiduals(fit_autoarima)
+checkresiduals(fit_ma)
+checkresiduals(fit_autoarima_noapprox)
+
+
+
+
+
+                   
+
